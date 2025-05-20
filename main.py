@@ -8,14 +8,11 @@ import warnings
 warnings.filterwarnings('ignore')
 
 def eyecandies_classes():
-    #classes = ['CandyCane', 'ChocolateCookie', 'ChocolatePraline', 'Confetto', 'GummyBear', 'HazelnutTruffle', 'LicoriceSandwich', 'Lollipop', 'Marshmallow', 'PeppermintCandy']
-    classes = ['PeppermintCandy']
-    #classes = ['ChocolateCookie', 'ChocolatePraline', 'Confetto', 'GummyBear', 'HazelnutTruffle', 'LicoriceSandwich', 'Lollipop', 'Marshmallow', 'PeppermintCandy']
+    classes = ['CandyCane', 'ChocolateCookie', 'ChocolatePraline', 'Confetto', 'GummyBear', 'HazelnutTruffle', 'LicoriceSandwich', 'Lollipop', 'Marshmallow', 'PeppermintCandy']
     return classes
 
 def mvtec3d_classes():
-    #classes = ['bagel', 'cable_gland', 'carrot', 'cookie', 'dowel', 'foam', 'peach', 'potato', 'rope', 'tire']
-    classes = ['cable_gland', 'carrot', 'cookie']
+    classes = ['bagel', 'cable_gland', 'carrot', 'cookie', 'dowel', 'foam', 'peach', 'potato', 'rope', 'tire']
     return classes
 
 def run_3d_ads(args):
@@ -31,11 +28,6 @@ def run_3d_ads(args):
     image_rocaucs_df = pd.DataFrame(METHOD_NAMES, columns=['Method'])
     pixel_rocaucs_df = pd.DataFrame(METHOD_NAMES, columns=['Method'])
     au_pros_df = pd.DataFrame(METHOD_NAMES, columns=['Method'])
-    #cls = 'cookie'
-    #cls = 'carrot'
-    #cls = 'cable_gland'
-    #print('TESTING ON ONE CLASS: ' + cls)
-    #if True:
     for cls in classes:
         torch.cuda.empty_cache()
         out_dir = os.path.join('results', cls)
@@ -43,7 +35,6 @@ def run_3d_ads(args):
             os.makedirs(out_dir)
 
         model = M3DM(args)
-        #model.methods['DINO'].save_path = out_dir + '/pretest-'
 
         model.methods['DINO'].save_path = out_dir + '/depth_0'
         
@@ -62,10 +53,6 @@ def run_3d_ads(args):
             model.evaluate(cls, depth = 0, domain = domain)
             model.evaluate(cls, depth = 0, domain = 'rgb')
             model.evaluate(cls, depth = 0, domain = 'multi')
-            #continue
-
-            #model.evaluate(cls, depth = 0, domain = domain)
-
         exit()
 
         if args.ift_path != '':
@@ -82,23 +69,7 @@ def run_3d_ads(args):
                 os.makedirs(out_dir)
             model.learn_disturb(out_dir, 3, cls, domain = 'rgb', args = args)
             model.learn_reconstruct_and_segment(out_dir, args.epochs, cls, domain = domain, args = args)
-            #image_rocaucs, pixel_rocaucs, au_pros = model.evaluate(cls, depth = 1, domain = domain)
-
-
-
-        #model.fit(cls, domain = 'ift')
-
-        #model.methods['DINO'].save_path = out_dir + '/depth_2-'
-        #image_rocaucs, pixel_rocaucs, au_pros = model.evaluate(cls, depth = 2, domain = domain)
-        #exit()
-
-
-
-
-        #image_rocaucs_df[cls.title()] = image_rocaucs_df['Method'].map(image_rocaucs)
-        #pixel_rocaucs_df[cls.title()] = pixel_rocaucs_df['Method'].map(pixel_rocaucs)
-        #au_pros_df[cls.title()] = au_pros_df['Method'].map(au_pros)
-
+        
         print(f"\nFinished running on class {cls}")
         print("################################################################################\n\n")
 

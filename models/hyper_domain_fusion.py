@@ -152,21 +152,9 @@ class HyperDomainFusionModule(nn.Module):
 
 
     def forward(self, image_feature, bank, adj = None, adj_type = 'dist'):
-
-        #pseudo_features = cross_domain_pseudo_feature(image_feature, bank.reshape(-1, image_feature.shape[-2], image_feature.shape[-1]))
-        #pseudo_features = cross_domain_pseudo_feature(image_feature, bank)
-
         nodes_feature = torch.concat([image_feature.reshape(-1, 768), bank.reshape(-1, 768)], dim = 0)
-
-        #adj = torch.cdist(image_feature, bank, p=2)
-
-        #print('construct adj:...')
-        
         if adj_type == 'simi':
-            #print(adj.shape)
-            #adj = construct_H_with_KNN_from_distance(adj, 5)
             adj = construct_similarity_from_distance(nodes_feature, 5)
-            #adj = torch.cosine_similarity(nodes_feature.unsqueeze(1), nodes_feature.unsqueeze(0), dim=-1)
             print(adj.shape)
         elif adj_type == 'dist':
             adj = torch.cdist(nodes_feature, nodes_feature, p=2)
@@ -175,55 +163,11 @@ class HyperDomainFusionModule(nn.Module):
             score_map = adj[:feature_number, :feature_number]
             values, index_top2 = torch.topk(score_map, 2)
             index = index_top2[:, 1]
-            if False:
-                print(image_feature.shape)
-                print(bank.shape)
-                print(feature_number)
-                print(adj.shape)
-                print('adj.shape')
-                print(score_map.shape)
-                print('top2')
-                print(index_top2[:, 1])
-                print('index:')
-                print(index.shape)
-            #assert index.max() <= fea
-            #index = index + feature_number
-            #print(index)
             pseudo_features = nodes_feature[index.tolist()]
 
-        #adj = hypergraph_utils.construct_H_with_KNN(nodes_feature.cpu().detach(), K_neigs=[self.knn_neibs],
-        #                                split_diff_scale=False,
-        #                                is_probH=True, m_prob=1)
-        #adj = torch.from_numpy(adj).half().cuda()
-
-        #adj = adj.float()
-        #nodes_feature = nodes_feature.half()
-
-        # adj need to be dense
-
-        #output = self.HGNN(nodes_feature.to(self.device), adj)
         output = self.HGNN(nodes_feature.to(self.device)[:feature_number], adj[:feature_number, :feature_number])
 
-        #print(output.shape)
-        #print(output[:image_feature.shape[1]].shape)
         output = output[:feature_number]
-
-        #print('pseudo_features.shape')
-        #print(pseudo_features.shape)
-
-        #_, max_index1 = torch.min(adj, dim=1)
-        #print(max_index[10000:])
-        #max_indexes = []
-        #for index in range(len(adj)):
-        #    _, max_index = torch.min(adj[index], dim=0)
-        #    max_indexes.append(max_index)
-        #max_indexes = torch.tensor(max_indexes).cuda()
-        #print(torch.tensor(max_indexes)[10000:].cuda())
-        #print(max_index1 == max_indexes)
-        #print(max_index0 == max_indexes)
-        #print(max_index1.float().mean())
-        #print(max_index0.float().mean())
-        #print(torch.tensor(max_indexes).float().mean())
 
         return output, pseudo_features
 

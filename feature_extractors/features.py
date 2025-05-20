@@ -103,51 +103,9 @@ class Features(torch.nn.Module):
     def __call__(self, rgb, enhanced = False, domain = 'rgb'):
         # Extract the desired feature maps using the backbone model.
         rgb = rgb.to(self.device)
-        #xyz = xyz.to(self.device)
         with torch.no_grad():
-            #rgb_feature_maps, xyz_feature_maps, center, ori_idx, center_idx = self.deep_feature_extractor(rgb, xyz)
             features = self.deep_feature_extractor(rgb)
-            #features = self.norm_patch_with_lib(features, domain)
-
-        if enhanced:
-            criterion = torch.nn.CrossEntropyLoss()
-            optimizer = torch.optim.Adam(
-                self.deep_feature_extractor.domain_classifier.parameters(),
-                lr = 1e-4,
-                weight_decay = 0
-            )
-            #features.reshape(-1, 784, 3, 16, 16)
-            print('! domain not specified')
-            if domain == 'rgb':
-                g = torch.tensor(0).unsqueeze(0).to('cuda:0')
-            else:
-                g = torch.tensor(1).unsqueeze(0).to('cuda:0')
-
-
-            domain_gradient = None
-            #features = features.reshape(-1, 768, 28, 28) 
-            features = features.reshape(-1, 3, 16, 16).clone().detach()
-            features.requires_grad_(True) 
-            g_hat_result = self.deep_feature_extractor.domain_classifier(features.view(1, -1))
-            loss_d = criterion(g_hat_result, g)
-            optimizer.zero_grad()
-            loss_d.backward()#retain_graph=True)
-            domain_gradient = features.grad
-
-            with torch.no_grad():
-                specific, generatic = cal_specific(features, domain_gradient)
-                specific = torch.flatten(specific, start_dim = -2, end_dim = -1).reshape( 784, 768)
-                specific = torch.flatten(specific, start_dim = 0, end_dim = 1).reshape( 784, 768)
-                generatic = torch.flatten(generatic, start_dim = -2, end_dim = -1).reshape( 784, 768)
-                generatic = torch.flatten(generatic, start_dim = 0, end_dim = 1).reshape( 784, 768)
-                #if g.item() == 0:
-                #!
-                #if not 1 in g:
-                features = self.deep_feature_extractor.ift(specific, generatic, self.patch_lib, self.patch_xyz_lib)
-                #elif not 0 in g:
-                #else:
-                #    enhanced_features = self.deep_feature_extractor.ift(specific, generatic, patch_xyz_lib, patch_rgb_lib)
-                        
+                       
         rgb_feature_maps = [fmap.to("cpu") for fmap in [features]]
 
         return rgb_feature_maps
@@ -178,12 +136,7 @@ class Features(torch.nn.Module):
     def calculate_metrics(self, path_list = None, save = True):
         try:
             self.image_preds = np.stack(self.image_preds)
-            #print('self.image_preds')
-            #print(self.image_preds)
             self.image_labels = np.stack(self.image_labels)
-            #print('self.image_labels')
-            #print(self.image_labels)
-            #print([i[0].item() for i in self.image_labels])
             self.pixel_preds = np.array(self.pixel_preds)
         except:
             print('WARNING: fea/fea/labels wrong')
@@ -246,10 +199,6 @@ class Features(torch.nn.Module):
                 if not os.path.exists(ad_dir):
                     os.mkdir(ad_dir)
                 
-                #print(len(self.image_preds))
-                #print(len(rgb_path))
-                #plt.savefig(os.path.join(ad_dir,  str(self.image_preds[i]) + '_pred_' + rgb_path[i][0].split('/')[-1] + '.jpg'))
-                #plt.savefig(ad_dir+str(self.image_preds[i]) + '_pred_' + rgb_path[i][0].split('/')[-1] + '.jpg')
                 path = ad_dir+rgb_path[i][0].split('/')[-1]+output_path[-11:] +'.jpg'
                 print(path)
                 plt.savefig(path)

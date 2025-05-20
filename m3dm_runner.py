@@ -56,16 +56,12 @@ class M3DM():
         for sample, _ in tqdm(train_loader, desc=f'Extracting train features for class {class_name}'):
             for method in self.methods.values():
                 if   domain == 'rgb':
-                    #sample = torch.tensor(sample[0]).to('cuda:0')
                     sample = sample[0].to('cuda:0')
                 elif domain == 'xyz':
                     sample = sample[2].to('cuda:0')
                 else:
-                    #raise Exception()
                     sample = sample[2].to('cuda:0')
                 samples.append(sample.cpu().squeeze(0))
-                #print('sample.shape')
-                #print(sample.shape)
                 if self.args.save_feature:
                     method.add_sample_to_mem_bank(sample, class_name=class_name, domain = domain)
                 else:
@@ -100,29 +96,20 @@ class M3DM():
         else:
             print('\tusing MUl')
 
-
-        #print('domain = ' + domain + '')
-
         image_rocaucs = dict()
         pixel_rocaucs = dict()
         au_pros = dict()
         test_loader = get_data_loader("test", class_name=class_name, img_size=self.image_size, args=self.args)
         path_list = []
-        #with torch.no_grad():
         
         for sample, mask, label, rgb_path in tqdm(test_loader, desc=f'........Extracting test features for class {class_name}'):
             sample = sample[2].to('cuda:0') # inference with xyz
 
             for method in self.methods.values():
                 method.save_path = 'results/'+class_name+'/level'+str(depth)+'_'+domain+'_'
-                #method.predict(sample, mask, label)
                 if domain == 'rgb':
-                    #method.predict_enhance_with_rgb(sample, mask, label, depth = depth)
                     method.predict_enhance_multi_lib(sample, mask, label, depth = depth, use_rgb = True, use_xyz = False)
                 elif domain == 'xyz':
-                    #print('predict enhance')
-                    #method.predict_enhance(sample, mask, label, depth = depth, domain = domain)
-                    #print('predict enhance multi lib')
                     method.predict_enhance_multi_lib(sample, mask, label, depth = depth, use_rgb = False, use_xyz = True)
                 else:
                     method.predict_enhance_multi_lib(sample, mask, label, depth = depth, use_rgb = True, use_xyz = True)
@@ -136,8 +123,6 @@ class M3DM():
             au_pros[method_name] = round(method.au_pro, 3)
             print(
                 f'\tClass: {class_name}, {method_name} Image ROCAUC: {method.image_rocauc:.3f}, {method_name} Pixel ROCAUC: {method.pixel_rocauc:.3f}, {method_name} AU-PRO: {method.au_pro:.3f}')
-            #if self.args.save_preds:
-            #    method.save_prediction_maps('./pred_maps', path_list)
         return image_rocaucs, pixel_rocaucs, au_pros
 
     #def learn_reconstruct_and_segment(self, classes, domain):
@@ -159,11 +144,7 @@ class M3DM():
             [
                 {'params':model.hyper_block.parameters()},
             ],
-            #+ [
-            #    {'params': layer.parameters() for layer in model.layers[3:model.num_disturb]}
-            #],
             lr = 1e-2,
-            #lr = 1e-3,
             weight_decay = 0
         )
 
@@ -205,18 +186,13 @@ class M3DM():
                     enhanced_features, pseudo_featuers  = model.hyper_block(features, patch_rgb_lib.unsqueeze(0))
                     # 112 * 112 
                     loss_l2 = torch.nn.functional.mse_loss(enhanced_features, features)# + torch.nn.functional.mse_loss(enhanced_features, pseudo_featuers)
-                    #loss_l2 = 1 - torch.nn.functional.cosine_similarity(enhanced_features, features, dim = -1).mean()
-                    #loss_l2 = 1 - torch.nn.functional.cosine_similarity(enhanced_features, pseudo_featuers, dim = -1).mean() +\
-                    #1 - torch.nn.functional.cosine_similarity(enhanced_features, features, dim = -1).mean()
 
                     optimizerC.zero_grad()
                     loss_C = loss_l2 #+ loss_disturb
                     loss_C.backward()
                     optimizerC.step()
                     pbar.set_postfix({
-                        #'Loss_disturb': '{:.4f}'.format(loss_disturb.item()),
                         'Loss_l2     ': '{:.4f}'.format(loss_l2.item()),
-                        #'Loss_total  ': '{:.4f}'.format(loss_l2.item())
                     })
                     pbar.update(1)
 
@@ -282,8 +258,6 @@ class M3DM():
                     features = features.clone().detach().reshape(-1, 784, 768)
                     enhanced_features, _  = model.hyper_block(features, patch_rgb_lib.unsqueeze(0))
                     loss_disturb = torch.nn.functional.mse_loss(features_disturbed, features)# + torch.nn.functional.mse_loss(enhanced_features, pseudo_featuers)
-                    #loss_disturb = 1 - torch.nn.functional.cosine_similarity(features_disturbed, features, dim = -1).mean()
-                    #print(loss_disturb)
 
                     optimizerC.zero_grad()
                     loss_C = loss_disturb
